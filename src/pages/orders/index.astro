@@ -1,8 +1,7 @@
 ---
 import StoreLayout from '../../layouts/StoreLayout.astro';
 
-// TODO: Replace with Cloudflare Access identity
-const userEmail = 'ashley.sullins@stancilservices.com';
+const userEmail = Astro.locals.userEmail;
 
 const db = Astro.locals.runtime.env.STORE_DB;
 

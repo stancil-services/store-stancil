@@ -6,7 +6,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const body = await request.json();
 
     /* ---- Input validation ------------------------------------ */
-    const { items, userEmail, userId } = body;
+    const { items } = body;
+    const sanitizedEmail = locals.userEmail.toLowerCase().trim();
 
     if (!Array.isArray(items) || items.length === 0) {
       return new Response(JSON.stringify({ success: false, error: 'Cart is empty' }), {
@@ -14,16 +15,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
         headers: { 'Content-Type': 'application/json' },
       });
     }
-
-    if (!userEmail || typeof userEmail !== 'string') {
-      return new Response(JSON.stringify({ success: false, error: 'User email is required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    const sanitizedEmail = String(userEmail).slice(0, 255).toLowerCase().trim();
-    const sanitizedUserId = userId ? String(userId).slice(0, 255) : null;
 
     // Cap at 50 line items
     if (items.length > 50) {
@@ -65,7 +56,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         });
       }
 
-      if (!Number.isInteger(quantity) || quantity <= 0 || quantity > 100) {
+      if (!Number.isInteger(quantity) || quantity <= 0 || quantity > 10) {
         return new Response(JSON.stringify({ success: false, error: 'Invalid quantity' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
@@ -89,22 +80,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
         });
       }
 
-      if (variant.stock_quantity < quantity) {
-        return new Response(
-          JSON.stringify({ success: false, error: `Insufficient stock for ${variant.product_name}` }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
       validatedItems.push({ variantId, quantity });
       variantRows.push(variant);
     }
 
     /* ---- Look up user profile for credit info ---------------- */
     const profile = await db
-      .prepare('SELECT * FROM profiles WHERE email = ?')
+      .prepare('SELECT id, yearly_credit, email FROM profiles WHERE email = ?')
       .bind(sanitizedEmail)
       .first() as { id: string; yearly_credit: number | null; email: string } | null;
+
+    const sanitizedUserId = profile?.id ? String(profile.id) : null;
 
     // Calculate credit already used from existing orders
     const creditUsedResult = await db
@@ -161,14 +147,45 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    // 2. Batch: insert order items + decrement stock
+    // 2. Atomic stock decrement — check stock_quantity >= requested in WHERE clause
+    for (let i = 0; i < validatedItems.length; i++) {
+      const item = validatedItems[i];
+      const variant = variantRows[i];
+
+      const stockResult = await db
+        .prepare(
+          'UPDATE product_variants SET stock_quantity = stock_quantity - ? WHERE id = ? AND stock_quantity >= ?'
+        )
+        .bind(item.quantity, item.variantId, item.quantity)
+        .run();
+
+      if (!stockResult.meta?.changes) {
+        // Insufficient stock — roll back the order
+        await db.batch([
+          db.prepare('DELETE FROM order_items WHERE order_id = ?').bind(orderId),
+          db.prepare('DELETE FROM orders WHERE id = ?').bind(orderId),
+          // Restore stock for any variants already decremented
+          ...validatedItems.slice(0, i).map((prev) =>
+            db
+              .prepare('UPDATE product_variants SET stock_quantity = stock_quantity + ? WHERE id = ?')
+              .bind(prev.quantity, prev.variantId)
+          ),
+        ]);
+
+        return new Response(
+          JSON.stringify({ success: false, error: `Insufficient stock for ${variant.product_name}` }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // 3. Insert order items
     const batchStatements = [];
 
     for (let i = 0; i < validatedItems.length; i++) {
       const item = validatedItems[i];
       const variant = variantRows[i];
 
-      // Insert order item
       batchStatements.push(
         db
           .prepare(
@@ -185,13 +202,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
             variant.color,
             variant.lead_time
           )
-      );
-
-      // Decrement stock
-      batchStatements.push(
-        db
-          .prepare('UPDATE product_variants SET stock_quantity = stock_quantity - ? WHERE id = ?')
-          .bind(item.quantity, item.variantId)
       );
     }
 

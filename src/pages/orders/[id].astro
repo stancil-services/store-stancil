@@ -2,6 +2,7 @@
 import StoreLayout from '../../layouts/StoreLayout.astro';
 
 const { id } = Astro.params;
+const userEmail = Astro.locals.userEmail;
 const db = Astro.locals.runtime.env.STORE_DB;
 
 // Fetch order
@@ -32,6 +33,11 @@ try {
 }
 
 if (!order) {
+  return Astro.redirect('/orders/');
+}
+
+// Verify ownership: order must belong to the authenticated user
+if ((order as any).employee_email?.toLowerCase() !== userEmail.toLowerCase()) {
   return Astro.redirect('/orders/');
 }
 

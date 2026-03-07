@@ -79,8 +79,6 @@ import StoreLayout from '../layouts/StoreLayout.astro';
 
 <script>
   const CART_KEY = 'stancil-cart';
-  // TODO: Replace with Cloudflare Access identity
-  const userEmail = 'ashley.sullins@stancilservices.com';
 
   let creditTotal = 200;
   let creditUsed = 0;
@@ -96,6 +94,13 @@ import StoreLayout from '../layouts/StoreLayout.astro';
   function saveCart(cart: any[]) {
     localStorage.setItem(CART_KEY, JSON.stringify(cart));
     window.dispatchEvent(new Event('cart-updated'));
+  }
+
+  function escapeHtml(str: string | null | undefined): string {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = String(str);
+    return div.innerHTML;
   }
 
   function formatPrice(cents: number): string {
@@ -122,15 +127,15 @@ import StoreLayout from '../layouts/StoreLayout.astro';
     itemsEl.innerHTML = cart.map((item, index) => `
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-start gap-4" data-index="${index}">
         <img
-          src="${item.imageUrl || '/images/placeholder-product.png'}"
-          alt="${item.productName}"
+          src="${escapeHtml(item.imageUrl) || '/images/placeholder-product.png'}"
+          alt="${escapeHtml(item.productName)}"
           class="w-12 h-12 rounded-lg object-cover shrink-0 bg-gray-100"
           onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 48 48%22%3E%3Crect fill=%22%23f3f4f6%22 width=%2248%22 height=%2248%22/%3E%3Ctext x=%2224%22 y=%2228%22 text-anchor=%22middle%22 fill=%22%239ca3af%22 font-size=%2214%22%3E?%3C/text%3E%3C/svg%3E'"
         />
         <div class="flex-1 min-w-0">
-          <h3 class="font-semibold text-brand-navy text-sm truncate">${item.productName}</h3>
+          <h3 class="font-semibold text-brand-navy text-sm truncate">${escapeHtml(item.productName)}</h3>
           <p class="text-xs text-gray-500 mt-0.5">
-            ${[item.size, item.color].filter(Boolean).join(' / ')}
+            ${[item.size, item.color].filter(Boolean).map((v: string) => escapeHtml(v)).join(' / ')}
             ${item.creditEligible ? '<span class="ml-1 text-brand-green">(Credit eligible)</span>' : ''}
           </p>
           <p class="text-sm font-bold text-brand-navy mt-1">${formatPrice(item.price)}</p>
@@ -216,7 +221,7 @@ import StoreLayout from '../layouts/StoreLayout.astro';
 
   async function fetchCredit() {
     try {
-      const res = await fetch(`/api/profile?email=${encodeURIComponent(userEmail)}`);
+      const res = await fetch('/api/profile');
       if (res.ok) {
         const data = await res.json();
         if (data.profile) {
