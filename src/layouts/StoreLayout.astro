@@ -35,7 +35,7 @@ const navLinks = [
   { label: 'Shop', href: '/' },
   { label: 'My Orders', href: '/orders/' },
   { label: 'Profile', href: '/profile/' },
-  ...(isAdmin ? [{ label: 'Admin', href: '/admin/orders/' }] : []),
+  ...(isAdmin ? [{ label: 'Orders', href: '/admin/orders/' }, { label: 'Users', href: '/admin/users/' }] : []),
 ];
 
 const currentPath = Astro.url.pathname;

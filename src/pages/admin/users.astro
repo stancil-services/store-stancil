@@ -1,0 +1,177 @@
+---
+import StoreLayout from '../../layouts/StoreLayout.astro';
+
+const userEmail = Astro.locals.userEmail;
+const db = Astro.locals.runtime.env.STORE_DB;
+
+const callerProfile = await db
+  .prepare('SELECT role FROM profiles WHERE email = ?')
+  .bind(userEmail)
+  .first() as { role: string } | null;
+
+if (!callerProfile || callerProfile.role !== 'admin') {
+  return Astro.redirect('/');
+}
+---
+
+<StoreLayout title="Admin: Users">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="font-display text-2xl sm:text-3xl font-bold text-brand-navy">Admin: Users</h1>
+      <span id="user-count" class="text-sm text-gray-500"></span>
+    </div>
+
+    <!-- Search -->
+    <div class="mb-6">
+      <input
+        id="search-input"
+        type="text"
+        placeholder="Search by name or email..."
+        class="w-full sm:w-80 px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-brand-navy placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue"
+      />
+    </div>
+
+    <!-- Users Table -->
+    <div id="users-container" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="text-center py-12 text-gray-500 text-sm">Loading...</div>
+    </div>
+
+    <!-- Feedback -->
+    <p id="feedback" class="hidden mt-4 text-sm font-medium"></p>
+  </div>
+</StoreLayout>
+
+<script>
+  const searchInput = document.getElementById('search-input') as HTMLInputElement;
+  const container = document.getElementById('users-container')!;
+  const countEl = document.getElementById('user-count')!;
+  const feedbackEl = document.getElementById('feedback')!;
+
+  let debounceTimer: ReturnType<typeof setTimeout>;
+
+  async function loadUsers(query = '') {
+    const url = query ? `/api/admin/users?q=${encodeURIComponent(query)}` : '/api/admin/users';
+    const res = await fetch(url);
+    const data = await res.json();
+    const users = data.users || [];
+
+    countEl.textContent = `${users.length} user${users.length !== 1 ? 's' : ''}`;
+
+    if (users.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-12 text-gray-500 text-sm">
+          ${query ? 'No users match your search.' : 'No users found.'}
+        </div>`;
+      return;
+    }
+
+    const roleStyles: Record<string, string> = {
+      admin: 'bg-purple-100 text-purple-800',
+      employee: 'bg-gray-100 text-gray-600',
+    };
+
+    // Desktop table + mobile cards
+    container.innerHTML = `
+      <div class="hidden sm:block overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-100 text-left text-gray-500 bg-gray-50">
+              <th class="px-6 py-3 font-medium">User</th>
+              <th class="px-6 py-3 font-medium">Location</th>
+              <th class="px-6 py-3 font-medium">Credit</th>
+              <th class="px-6 py-3 font-medium">Role</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            ${users.map((u: any) => {
+              const name = u.display_name || [u.first_name, u.last_name].filter(Boolean).join(' ') || '--';
+              const badge = roleStyles[u.role] || roleStyles.employee;
+              return `
+                <tr class="hover:bg-gray-50 transition-colors" data-user-id="${u.id}">
+                  <td class="px-6 py-4">
+                    <p class="font-medium text-brand-navy">${name}</p>
+                    <p class="text-xs text-gray-400 mt-0.5">${u.email}</p>
+                  </td>
+                  <td class="px-6 py-4 text-gray-600">${u.primary_location || '--'}</td>
+                  <td class="px-6 py-4 text-gray-600">$${(u.yearly_credit || 0).toFixed(2)}</td>
+                  <td class="px-6 py-4">
+                    <select class="role-select px-2 py-1 border border-gray-200 rounded text-xs font-medium ${badge}" data-user-id="${u.id}" data-original="${u.role}">
+                      <option value="employee"${u.role === 'employee' ? ' selected' : ''}>Employee</option>
+                      <option value="admin"${u.role === 'admin' ? ' selected' : ''}>Admin</option>
+                    </select>
+                  </td>
+                </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sm:hidden divide-y divide-gray-50">
+        ${users.map((u: any) => {
+          const name = u.display_name || [u.first_name, u.last_name].filter(Boolean).join(' ') || '--';
+          const badge = roleStyles[u.role] || roleStyles.employee;
+          return `
+            <div class="p-4" data-user-id="${u.id}">
+              <div class="flex items-start justify-between gap-3 mb-1">
+                <div>
+                  <p class="font-medium text-brand-navy text-sm">${name}</p>
+                  <p class="text-xs text-gray-400">${u.email}</p>
+                  <p class="text-xs text-gray-500 mt-1">${u.primary_location || '--'}</p>
+                </div>
+                <select class="role-select px-2 py-1 border border-gray-200 rounded text-xs font-medium ${badge}" data-user-id="${u.id}" data-original="${u.role}">
+                  <option value="employee"${u.role === 'employee' ? ' selected' : ''}>Employee</option>
+                  <option value="admin"${u.role === 'admin' ? ' selected' : ''}>Admin</option>
+                </select>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>`;
+
+    // Attach change listeners
+    container.querySelectorAll('.role-select').forEach(select => {
+      select.addEventListener('change', async (e) => {
+        const el = e.target as HTMLSelectElement;
+        const userId = el.dataset.userId!;
+        const newRole = el.value;
+        el.disabled = true;
+
+        try {
+          const res = await fetch('/api/admin/users', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, role: newRole }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+
+          showFeedback(`Role updated to ${newRole}`, false);
+          // Update badge color
+          el.className = `role-select px-2 py-1 border border-gray-200 rounded text-xs font-medium ${
+            newRole === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-600'
+          }`;
+        } catch (err: any) {
+          showFeedback(err.message || 'Failed to update role', true);
+          el.value = el.dataset.original!;
+        } finally {
+          el.disabled = false;
+        }
+      });
+    });
+  }
+
+  function showFeedback(msg: string, isError: boolean) {
+    feedbackEl.textContent = msg;
+    feedbackEl.className = `mt-4 text-sm font-medium ${isError ? 'text-red-600' : 'text-brand-green'}`;
+    feedbackEl.classList.remove('hidden');
+    setTimeout(() => feedbackEl.classList.add('hidden'), 3000);
+  }
+
+  // Search with debounce
+  searchInput?.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => loadUsers(searchInput.value.trim()), 300);
+  });
+
+  // Initial load
+  loadUsers();
+</script>
