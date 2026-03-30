@@ -16,7 +16,7 @@ if (!callerProfile || callerProfile.role !== 'admin') {
 
 // Status filter from query param
 const statusParam = Astro.url.searchParams.get('status') || '';
-const validStatuses = ['Pending', 'Fulfilled', 'Partial', 'Cancelled'];
+const validStatuses = ['Pending', 'Confirmed', 'Processing', 'Fulfilled', 'Cancelled'];
 const activeFilter = validStatuses.includes(statusParam) ? statusParam : '';
 
 let orders: any[] = [];
@@ -62,7 +62,8 @@ function employeeName(order: any): string {
 
 const statusStyles: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-800',
-  partial: 'bg-blue-100 text-blue-800',
+  confirmed: 'bg-blue-100 text-blue-800',
+  processing: 'bg-purple-100 text-purple-800',
   fulfilled: 'bg-green-100 text-green-800',
   cancelled: 'bg-red-100 text-red-800',
 };
@@ -70,7 +71,8 @@ const statusStyles: Record<string, string> = {
 const filters = [
   { label: 'All', value: '' },
   { label: 'Pending', value: 'Pending' },
-  { label: 'Partial', value: 'Partial' },
+  { label: 'Confirmed', value: 'Confirmed' },
+  { label: 'Processing', value: 'Processing' },
   { label: 'Fulfilled', value: 'Fulfilled' },
   { label: 'Cancelled', value: 'Cancelled' },
 ];

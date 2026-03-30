@@ -70,7 +70,8 @@ const employeeName = order.display_name
 const status = (order.status || 'Pending');
 const statusStyles: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-800',
-  partial: 'bg-blue-100 text-blue-800',
+  confirmed: 'bg-blue-100 text-blue-800',
+  processing: 'bg-purple-100 text-purple-800',
   fulfilled: 'bg-green-100 text-green-800',
   cancelled: 'bg-red-100 text-red-800',
 };
@@ -159,7 +160,7 @@ const itemStatusStyles: Record<string, string> = {
               id="status-select"
               class="w-full sm:w-48 px-3 py-2 border border-gray-200 rounded-lg text-sm text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-blue"
             >
-              {['Pending', 'Partial', 'Fulfilled', 'Cancelled'].map(s => (
+              {['Pending', 'Confirmed', 'Processing', 'Fulfilled', 'Cancelled'].map(s => (
                 <option value={s} selected={s === status}>{s}</option>
               ))}
             </select>

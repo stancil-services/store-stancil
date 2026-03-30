@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { sendEmail, type GraphEnv } from '../../../lib/email';
 import { orderFulfilledEmail } from '../../../lib/email-templates';
 
-const VALID_STATUSES = ['Pending', 'Fulfilled', 'Partial', 'Cancelled'];
+const VALID_STATUSES = ['Pending', 'Confirmed', 'Processing', 'Fulfilled', 'Cancelled'];
 
 export const PATCH: APIRoute = async ({ params, locals, request }) => {
   try {
