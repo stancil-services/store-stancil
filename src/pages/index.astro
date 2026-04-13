@@ -35,15 +35,15 @@ const categories = categoryRows.map((r: any) => r.category as string);
     <div class="mb-8 pb-8 border-b border-warm-gray">
       <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <p class="hero-line text-brand-blue text-xs font-semibold tracking-widest uppercase mb-2">Stancil Employee Store</p>
-          <h1 class="hero-line font-display text-4xl sm:text-5xl font-bold text-brand-navy leading-tight" style="animation-delay:0.15s">Shop</h1>
+          <p data-i18n-key="shop.heroLabel" class="hero-line text-brand-blue text-xs font-semibold tracking-widest uppercase mb-2">Stancil Employee Store</p>
+          <h1 data-i18n-key="shop.heading" class="hero-line font-display text-4xl sm:text-5xl font-bold text-brand-navy leading-tight" style="animation-delay:0.15s">Shop</h1>
         </div>
         <div class="hero-line sm:text-right shrink-0" style="animation-delay:0.25s">
-          <p class="text-near-black/40 text-xs uppercase tracking-wide font-medium">Yearly Credit</p>
+          <p data-i18n-key="shop.yearlyCredit" class="text-near-black/40 text-xs uppercase tracking-wide font-medium">Yearly Credit</p>
           <p id="header-credit-display" class="font-display text-3xl font-bold text-brand-blue leading-tight">$200</p>
         </div>
       </div>
-      <p class="hero-line mt-4 text-near-black/55 max-w-xl" style="animation-delay:0.4s">
+      <p data-i18n-key="shop.description" class="hero-line mt-4 text-near-black/55 max-w-xl" style="animation-delay:0.4s">
         Browse company merchandise and gear. Credit is applied automatically at checkout.
       </p>
     </div>
@@ -54,6 +54,7 @@ const categories = categoryRows.map((r: any) => r.category as string);
       <div class="flex flex-wrap items-center gap-2" id="category-filters">
         <button
           type="button"
+          data-i18n-key="shop.all"
           class="category-pill px-4 py-1.5 rounded-full text-sm font-medium transition-colors bg-brand-blue text-white"
           data-category="all"
         >
@@ -77,7 +78,7 @@ const categories = categoryRows.map((r: any) => r.category as string);
           id="credit-toggle"
           class="w-4 h-4 rounded border-warm-gray text-brand-blue focus:ring-brand-blue"
         />
-        <span class="text-sm text-near-black/70">Credit-eligible only</span>
+        <span data-i18n-key="shop.creditEligibleOnly" class="text-sm text-near-black/70">Credit-eligible only</span>
       </label>
     </div>
 
@@ -101,16 +102,19 @@ const categories = categoryRows.map((r: any) => r.category as string);
 
           let stockStatus: 'in-stock' | 'low-stock' | 'out-of-stock' = 'out-of-stock';
           let stockLabel = 'Out of Stock';
+          let stockI18nKey = 'shop.outOfStock';
           let stockColor = 'bg-red-500';
           let stockTextColor = 'text-red-600';
           if (totalStock > 5) {
             stockStatus = 'in-stock';
             stockLabel = 'In Stock';
+            stockI18nKey = 'shop.inStock';
             stockColor = 'bg-brand-green';
             stockTextColor = 'text-brand-green';
           } else if (totalStock > 0) {
             stockStatus = 'low-stock';
             stockLabel = 'Low Stock';
+            stockI18nKey = 'shop.lowStock';
             stockColor = 'bg-amber-500';
             stockTextColor = 'text-amber-600';
           }
@@ -139,7 +143,7 @@ const categories = categoryRows.map((r: any) => r.category as string);
                   </div>
                 )}
                 {hasCreditEligible && (
-                  <span class="absolute top-3 right-3 bg-brand-green text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
+                  <span data-i18n-key="shop.creditEligibleBadge" class="absolute top-3 right-3 bg-brand-green text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
                     Credit Eligible
                   </span>
                 )}
@@ -172,7 +176,7 @@ const categories = categoryRows.map((r: any) => r.category as string);
                 {/* Stock Indicator */}
                 <div class="flex items-center gap-1.5">
                   <span class={`w-2 h-2 rounded-full ${stockColor}`} />
-                  <span class={`text-xs font-medium ${stockTextColor}`}>{stockLabel}</span>
+                  <span data-i18n-key={stockI18nKey} class={`text-xs font-medium ${stockTextColor}`}>{stockLabel}</span>
                 </div>
               </div>
             </a>
@@ -185,8 +189,8 @@ const categories = categoryRows.map((r: any) => r.category as string);
         <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
-        <h2 class="text-xl font-display text-near-black/50 mb-2">No products available right now</h2>
-        <p class="text-near-black/40">Check back soon for new merchandise.</p>
+        <h2 data-i18n-key="shop.noProducts" class="text-xl font-display text-near-black/50 mb-2">No products available right now</h2>
+        <p data-i18n-key="shop.noProductsDesc" class="text-near-black/40">Check back soon for new merchandise.</p>
       </div>
     )}
   </div>

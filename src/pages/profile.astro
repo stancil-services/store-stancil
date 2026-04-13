@@ -58,12 +58,12 @@ const statusStyles: Record<string, string> = {
 
 <StoreLayout title="My Profile">
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h1 class="font-display text-2xl sm:text-3xl font-bold text-brand-navy mb-8">My Profile</h1>
+    <h1 data-i18n-key="profile.heading" class="font-display text-2xl sm:text-3xl font-bold text-brand-navy mb-8">My Profile</h1>
 
     <div class="grid md:grid-cols-2 gap-6 mb-8">
       <!-- Credit Balance Card -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center">
-        <h2 class="font-semibold text-brand-navy mb-6 self-start">Credit Balance</h2>
+        <h2 data-i18n-key="profile.creditBalance" class="font-semibold text-brand-navy mb-6 self-start">Credit Balance</h2>
         <div class="relative w-36 h-36 mb-4">
           <svg class="w-full h-full -rotate-90" viewBox="0 0 120 120">
             <!-- Background circle -->
@@ -87,48 +87,48 @@ const statusStyles: Record<string, string> = {
           </svg>
           <div class="absolute inset-0 flex flex-col items-center justify-center">
             <span class="text-2xl font-bold text-brand-navy">${creditRemaining.toFixed(0)}</span>
-            <span class="text-xs text-gray-500">remaining</span>
+            <span data-i18n-key="profile.remaining" class="text-xs text-gray-500">remaining</span>
           </div>
         </div>
-        <p class="text-sm text-gray-500">of ${yearlyCredit.toFixed(0)} yearly credit</p>
+        <p id="profile-credit-line" data-amount={yearlyCredit.toFixed(0)} class="text-sm text-gray-500">of ${yearlyCredit.toFixed(0)} yearly credit</p>
         <div class="flex gap-6 mt-4 text-sm">
           <div class="text-center">
             <p class="font-semibold text-brand-navy">${creditUsed.toFixed(2)}</p>
-            <p class="text-xs text-gray-500">Used</p>
+            <p data-i18n-key="profile.used" class="text-xs text-gray-500">Used</p>
           </div>
           <div class="text-center">
             <p class="font-semibold text-brand-green">${creditRemaining.toFixed(2)}</p>
-            <p class="text-xs text-gray-500">Available</p>
+            <p data-i18n-key="profile.available" class="text-xs text-gray-500">Available</p>
           </div>
         </div>
       </div>
 
       <!-- Profile Info Card -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 class="font-semibold text-brand-navy mb-6">Profile Information</h2>
+        <h2 data-i18n-key="profile.profileInfo" class="font-semibold text-brand-navy mb-6">Profile Information</h2>
         {profile ? (
           <dl class="space-y-4">
             <div>
-              <dt class="text-xs text-gray-500 uppercase tracking-wider">Name</dt>
+              <dt data-i18n-key="profile.name" class="text-xs text-gray-500 uppercase tracking-wider">Name</dt>
               <dd class="text-sm font-medium text-brand-navy mt-1">{profile.display_name || [profile.first_name, profile.last_name].filter(Boolean).join(' ') || '--'}</dd>
             </div>
             <div>
-              <dt class="text-xs text-gray-500 uppercase tracking-wider">Email</dt>
+              <dt data-i18n-key="profile.email" class="text-xs text-gray-500 uppercase tracking-wider">Email</dt>
               <dd class="text-sm font-medium text-brand-navy mt-1">{profile.email}</dd>
             </div>
             <div>
-              <dt class="text-xs text-gray-500 uppercase tracking-wider">Location</dt>
+              <dt data-i18n-key="profile.location" class="text-xs text-gray-500 uppercase tracking-wider">Location</dt>
               <dd class="text-sm font-medium text-brand-navy mt-1">{profile.primary_location || '--'}</dd>
             </div>
             <div>
-              <dt class="text-xs text-gray-500 uppercase tracking-wider">Manager</dt>
+              <dt data-i18n-key="profile.manager" class="text-xs text-gray-500 uppercase tracking-wider">Manager</dt>
               <dd class="text-sm font-medium text-brand-navy mt-1">{profile.manager_name || '--'}</dd>
             </div>
           </dl>
         ) : (
           <div class="text-center py-8">
-            <p class="text-gray-500 text-sm">Profile not found.</p>
-            <p class="text-gray-400 text-xs mt-1">Contact HR if this is an error.</p>
+            <p data-i18n-key="profile.profileNotFound" class="text-gray-500 text-sm">Profile not found.</p>
+            <p data-i18n-key="profile.contactHR" class="text-gray-400 text-xs mt-1">Contact HR if this is an error.</p>
           </div>
         )}
       </div>
@@ -137,17 +137,17 @@ const statusStyles: Record<string, string> = {
     <!-- Recent Orders -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h2 class="font-semibold text-brand-navy">Recent Orders</h2>
+        <h2 data-i18n-key="profile.recentOrders" class="font-semibold text-brand-navy">Recent Orders</h2>
         {recentOrders.length > 0 && (
-          <a href="/orders/" class="text-sm text-brand-blue hover:text-brand-dark-blue transition-colors">
+          <a href="/orders/" data-i18n-key="profile.viewAll" class="text-sm text-brand-blue hover:text-brand-dark-blue transition-colors">
             View all
           </a>
         )}
       </div>
       {recentOrders.length === 0 ? (
         <div class="text-center py-10">
-          <p class="text-gray-500 text-sm mb-3">No orders yet.</p>
-          <a href="/" class="text-sm text-brand-blue hover:text-brand-dark-blue transition-colors font-medium">
+          <p data-i18n-key="profile.noOrdersYet" class="text-gray-500 text-sm mb-3">No orders yet.</p>
+          <a href="/" data-i18n-key="profile.browseStore" class="text-sm text-brand-blue hover:text-brand-dark-blue transition-colors font-medium">
             Browse the store
           </a>
         </div>
@@ -160,7 +160,9 @@ const statusStyles: Record<string, string> = {
               <a href={`/orders/${order.id}`} class="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors group">
                 <div>
                   <div class="flex items-center gap-2">
-                    <span class="text-sm font-medium text-brand-navy">Order #{order.id}</span>
+                    <span class="text-sm font-medium text-brand-navy">
+                      <span data-i18n-key="common.orderPrefix">Order</span> #{order.id}
+                    </span>
                     <span class={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium capitalize ${badgeClass}`}>
                       {status}
                     </span>
@@ -180,4 +182,23 @@ const statusStyles: Record<string, string> = {
       )}
     </div>
   </div>
+
+  <script>
+    import { getLang, LANG_EVENT, type Language } from '../lib/i18n';
+
+    const creditLineEl = document.getElementById('profile-credit-line');
+
+    function updateCreditLine(lang: Language) {
+      if (!creditLineEl) return;
+      const amount = creditLineEl.dataset.amount || '200';
+      creditLineEl.textContent = lang === 'es'
+        ? `$${amount} de crédito anual`
+        : `of $${amount} yearly credit`;
+    }
+
+    updateCreditLine(getLang());
+    window.addEventListener(LANG_EVENT, (e) => {
+      updateCreditLine((e as CustomEvent).detail.lang);
+    });
+  </script>
 </StoreLayout>

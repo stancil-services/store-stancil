@@ -39,7 +39,7 @@ const statusStyles: Record<string, string> = {
 
 <StoreLayout title="My Orders">
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h1 class="font-display text-2xl sm:text-3xl font-bold text-brand-navy mb-8">My Orders</h1>
+    <h1 data-i18n-key="myOrders.heading" class="font-display text-2xl sm:text-3xl font-bold text-brand-navy mb-8">My Orders</h1>
 
     {orders.length === 0 ? (
       <div class="text-center py-16">
@@ -48,9 +48,9 @@ const statusStyles: Record<string, string> = {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
         </div>
-        <h2 class="text-xl font-semibold text-brand-navy mb-2">No orders yet</h2>
-        <p class="text-gray-500 mb-6">Your order history will appear here once you place your first order.</p>
-        <a href="/" class="inline-flex items-center gap-2 px-6 py-3 bg-brand-blue text-white font-semibold rounded-lg hover:bg-brand-dark-blue transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue">
+        <h2 data-i18n-key="myOrders.noOrders" class="text-xl font-semibold text-brand-navy mb-2">No orders yet</h2>
+        <p data-i18n-key="myOrders.noOrdersDesc" class="text-gray-500 mb-6">Your order history will appear here once you place your first order.</p>
+        <a href="/" data-i18n-key="myOrders.startShopping" class="inline-flex items-center gap-2 px-6 py-3 bg-brand-blue text-white font-semibold rounded-lg hover:bg-brand-dark-blue transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue">
           Start Shopping
         </a>
       </div>
@@ -67,7 +67,9 @@ const statusStyles: Record<string, string> = {
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <div class="flex items-center gap-3 mb-1">
-                    <span class="font-semibold text-brand-navy">Order #{order.id}</span>
+                    <span class="font-semibold text-brand-navy">
+                      <span data-i18n-key="common.orderPrefix">Order</span> #{order.id}
+                    </span>
                     <span class={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${badgeClass}`}>
                       {status}
                     </span>
@@ -79,10 +81,14 @@ const statusStyles: Record<string, string> = {
                     <p class="text-sm font-bold text-brand-navy">{formatPrice(order.total_amount || 0)}</p>
                     <div class="flex gap-3 text-xs text-gray-500">
                       {order.credit_used > 0 && (
-                        <span class="text-brand-green">Credit: {formatPrice(order.credit_used)}</span>
+                        <span class="text-brand-green">
+                          <span data-i18n-key="myOrders.creditLabel">Credit</span>: {formatPrice(order.credit_used)}
+                        </span>
                       )}
                       {order.out_of_pocket > 0 && (
-                        <span>OOP: {formatPrice(order.out_of_pocket)}</span>
+                        <span>
+                          <span data-i18n-key="myOrders.oopLabel">OOP</span>: {formatPrice(order.out_of_pocket)}
+                        </span>
                       )}
                     </div>
                   </div>
