@@ -153,18 +153,6 @@ const itemStatusStyles: Record<string, string> = {
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h2 class="font-semibold text-brand-navy mb-4">Manage Order</h2>
         <div class="space-y-4">
-          <!-- Status -->
-          <div>
-            <label for="status-select" class="block text-xs text-gray-500 uppercase tracking-wider mb-1">Status</label>
-            <select
-              id="status-select"
-              class="w-full sm:w-48 px-3 py-2 border border-gray-200 rounded-lg text-sm text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-blue"
-            >
-              {['Pending', 'Confirmed', 'Processing', 'Fulfilled', 'Cancelled'].map(s => (
-                <option value={s} selected={s === status}>{s}</option>
-              ))}
-            </select>
-          </div>
           <!-- Notes -->
           <div>
             <label for="order-notes" class="block text-xs text-gray-500 uppercase tracking-wider mb-1">Order Notes</label>
@@ -174,24 +162,56 @@ const itemStatusStyles: Record<string, string> = {
               class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-brand-navy placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue resize-none"
               placeholder="Add notes visible to the employee..."
             >{order.order_notes || ''}</textarea>
+            <div class="flex justify-end mt-2">
+              <button
+                id="save-notes-btn"
+                type="button"
+                class="px-4 py-1.5 border border-gray-200 text-brand-navy font-medium rounded-lg text-xs hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Save Notes
+              </button>
+            </div>
           </div>
-          <!-- Buttons -->
+
+          <!-- Status Actions -->
+          <div class="pt-2 border-t border-gray-100">
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-3">
+              Current Status: <span class="font-semibold text-brand-navy capitalize">{status.toLowerCase()}</span>
+            </p>
+            <div id="status-actions" class="flex flex-wrap gap-2">
+              {/* Buttons populated by JS based on current status */}
+            </div>
+          </div>
+
+          <p id="action-feedback" class="hidden text-sm text-brand-green font-medium"></p>
+          <p id="action-error" class="hidden text-sm text-red-600"></p>
+        </div>
+      </div>
+
+      <!-- Cancel Confirmation Modal -->
+      <div id="confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div id="confirm-backdrop" class="absolute inset-0 bg-black/50"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+          <h3 class="font-display text-lg font-bold text-brand-navy mb-2">Cancel this order?</h3>
+          <p class="text-sm text-gray-600 mb-6">
+            This will refund any credit applied, notify the employee, and cannot be undone.
+          </p>
           <div class="flex flex-col sm:flex-row gap-3">
             <button
-              id="save-btn"
-              class="px-6 py-2.5 bg-brand-blue text-white font-semibold rounded-lg hover:bg-brand-dark-blue transition-colors text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue disabled:opacity-50"
+              id="confirm-yes"
+              type="button"
+              class="flex-1 px-5 py-2.5 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
             >
-              Save Changes
+              Yes, Cancel Order
             </button>
             <button
-              id="fulfill-btn"
-              class="px-6 py-2.5 bg-brand-green text-white font-semibold rounded-lg hover:opacity-90 transition-opacity text-sm focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
+              id="confirm-no"
+              type="button"
+              class="flex-1 px-5 py-2.5 border border-gray-200 text-brand-navy font-medium rounded-lg hover:bg-gray-50 transition-colors text-sm"
             >
-              Mark as Fulfilled
+              Keep Order
             </button>
           </div>
-          <p id="save-feedback" class="hidden text-sm text-brand-green font-medium"></p>
-          <p id="save-error" class="hidden text-sm text-red-600"></p>
         </div>
       </div>
 
@@ -284,17 +304,53 @@ const itemStatusStyles: Record<string, string> = {
   </div>
 </StoreLayout>
 
-<script define:vars={{ orderId: id }}>
-  const saveBtn = document.getElementById('save-btn');
-  const fulfillBtn = document.getElementById('fulfill-btn');
-  const statusSelect = document.getElementById('status-select');
+<script define:vars={{ orderId: id, currentStatus: status }}>
+  const statusActions = document.getElementById('status-actions');
   const notesEl = document.getElementById('order-notes');
-  const feedbackEl = document.getElementById('save-feedback');
-  const errorEl = document.getElementById('save-error');
+  const saveNotesBtn = document.getElementById('save-notes-btn');
+  const feedbackEl = document.getElementById('action-feedback');
+  const errorEl = document.getElementById('action-error');
+
+  // Normalize status to Titlecase in case DB has inconsistent casing
+  const normalized = currentStatus
+    ? currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1).toLowerCase()
+    : 'Pending';
+
+  // Allowed transitions per current status
+  const transitionMap = {
+    Pending:    ['Confirmed', 'Cancelled'],
+    Confirmed:  ['Processing', 'Cancelled'],
+    Processing: ['Fulfilled',  'Cancelled'],
+    Fulfilled:  [],
+    Cancelled:  [],
+  };
+
+  const buttonLabels = {
+    Confirmed:  'Confirm Order',
+    Processing: 'Mark Processing',
+    Fulfilled:  'Mark Fulfilled',
+    Cancelled:  'Cancel Order',
+  };
+
+  // Full class strings so Tailwind JIT picks them up
+  const buttonClassMap = {
+    Confirmed:  'px-5 py-2.5 bg-brand-blue text-white font-semibold rounded-lg hover:bg-brand-dark-blue transition-colors text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue disabled:opacity-50',
+    Processing: 'px-5 py-2.5 bg-brand-blue text-white font-semibold rounded-lg hover:bg-brand-dark-blue transition-colors text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue disabled:opacity-50',
+    Fulfilled:  'px-5 py-2.5 bg-brand-green text-white font-semibold rounded-lg hover:opacity-90 transition-opacity text-sm focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50',
+    Cancelled:  'px-5 py-2.5 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50',
+  };
 
   function showFeedback(msg, isError = false) {
-    if (feedbackEl) { feedbackEl.textContent = msg; feedbackEl.classList.toggle('hidden', isError); }
-    if (errorEl) { errorEl.textContent = isError ? msg : ''; errorEl.classList.toggle('hidden', !isError); }
+    if (!isError && feedbackEl) {
+      feedbackEl.textContent = msg;
+      feedbackEl.classList.remove('hidden');
+      errorEl?.classList.add('hidden');
+    }
+    if (isError && errorEl) {
+      errorEl.textContent = msg;
+      errorEl.classList.remove('hidden');
+      feedbackEl?.classList.add('hidden');
+    }
     setTimeout(() => {
       feedbackEl?.classList.add('hidden');
       errorEl?.classList.add('hidden');
@@ -312,31 +368,69 @@ const itemStatusStyles: Record<string, string> = {
     return data;
   }
 
-  saveBtn?.addEventListener('click', async () => {
-    saveBtn.disabled = true;
+  async function changeStatus(targetStatus) {
+    const buttons = statusActions?.querySelectorAll('button') || [];
+    buttons.forEach((b) => (b.disabled = true));
     try {
-      await patchOrder({
-        status: statusSelect?.value,
-        order_notes: notesEl?.value ?? '',
+      await patchOrder({ status: targetStatus, order_notes: notesEl?.value ?? '' });
+      showFeedback(`Order marked as ${targetStatus.toLowerCase()}. Reloading…`);
+      setTimeout(() => window.location.reload(), 900);
+    } catch (err) {
+      showFeedback(err.message, true);
+      buttons.forEach((b) => (b.disabled = false));
+    }
+  }
+
+  function renderButtons() {
+    if (!statusActions) return;
+    const allowed = transitionMap[normalized] || [];
+    if (allowed.length === 0) {
+      statusActions.innerHTML = '<p class="text-xs text-gray-500 italic">No status actions available — this order is in a final state.</p>';
+      return;
+    }
+    statusActions.innerHTML = allowed
+      .map((target) => `<button type="button" data-target="${target}" class="${buttonClassMap[target]}">${buttonLabels[target]}</button>`)
+      .join('');
+    statusActions.querySelectorAll('button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.target;
+        if (target === 'Cancelled') {
+          showConfirmModal(() => changeStatus(target));
+        } else if (target) {
+          changeStatus(target);
+        }
       });
-      showFeedback('Changes saved.');
+    });
+  }
+
+  function showConfirmModal(onConfirm) {
+    const modal = document.getElementById('confirm-modal');
+    const backdrop = document.getElementById('confirm-backdrop');
+    const yesBtn = document.getElementById('confirm-yes');
+    const noBtn = document.getElementById('confirm-no');
+    if (!modal) { onConfirm(); return; }
+
+    const close = () => modal.classList.add('hidden');
+    const confirm = () => { close(); onConfirm(); };
+
+    yesBtn.onclick = confirm;
+    noBtn.onclick = close;
+    backdrop.onclick = close;
+    modal.classList.remove('hidden');
+  }
+
+  // Save Notes button — updates order_notes only, no status change (so no email fires)
+  saveNotesBtn?.addEventListener('click', async () => {
+    saveNotesBtn.disabled = true;
+    try {
+      await patchOrder({ order_notes: notesEl?.value ?? '' });
+      showFeedback('Notes saved.');
     } catch (err) {
       showFeedback(err.message, true);
     } finally {
-      saveBtn.disabled = false;
+      saveNotesBtn.disabled = false;
     }
   });
 
-  fulfillBtn?.addEventListener('click', async () => {
-    fulfillBtn.disabled = true;
-    try {
-      await patchOrder({ status: 'Fulfilled', order_notes: notesEl?.value ?? '' });
-      if (statusSelect) statusSelect.value = 'Fulfilled';
-      showFeedback('Order marked as fulfilled.');
-    } catch (err) {
-      showFeedback(err.message, true);
-    } finally {
-      fulfillBtn.disabled = false;
-    }
-  });
+  renderButtons();
 </script>

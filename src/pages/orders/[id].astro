@@ -83,17 +83,21 @@ const outOfPocket = order.out_of_pocket || 0;
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Breadcrumb -->
     <nav class="flex items-center gap-2 text-sm text-gray-500 mb-6">
-      <a href="/orders/" class="hover:text-brand-blue transition-colors">My Orders</a>
+      <a href="/orders/" data-i18n-key="orderDetail.breadcrumbHome" class="hover:text-brand-blue transition-colors">My Orders</a>
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
       </svg>
-      <span class="text-brand-navy font-medium">Order #{id}</span>
+      <span class="text-brand-navy font-medium">
+        <span data-i18n-key="common.orderPrefix">Order</span> #{id}
+      </span>
     </nav>
 
     <!-- Order Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
       <div>
-        <h1 class="font-display text-2xl sm:text-3xl font-bold text-brand-navy">Order #{id}</h1>
+        <h1 class="font-display text-2xl sm:text-3xl font-bold text-brand-navy">
+          <span data-i18n-key="common.orderPrefix">Order</span> #{id}
+        </h1>
         <p class="text-sm text-gray-500 mt-1">{formatDate(order.created_at)}</p>
       </div>
       <span class={`inline-flex self-start px-3 py-1 rounded-full text-sm font-medium capitalize ${badgeClass}`}>
@@ -103,24 +107,24 @@ const outOfPocket = order.out_of_pocket || 0;
 
     <!-- Order Summary Card -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-      <h2 class="font-semibold text-brand-navy mb-4">Order Summary</h2>
+      <h2 data-i18n-key="orderDetail.orderSummary" class="font-semibold text-brand-navy mb-4">Order Summary</h2>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
         <div>
-          <p class="text-gray-500">Total</p>
+          <p data-i18n-key="orderDetail.total" class="text-gray-500">Total</p>
           <p class="font-bold text-brand-navy text-lg">{formatPrice(order.total_amount || 0)}</p>
         </div>
         <div>
-          <p class="text-gray-500">Credit applied</p>
+          <p data-i18n-key="orderDetail.creditApplied" class="text-gray-500">Credit applied</p>
           <p class="font-bold text-brand-green text-lg">{formatPrice(order.credit_used || 0)}</p>
         </div>
         <div>
-          <p class="text-gray-500">Out-of-pocket</p>
+          <p data-i18n-key="orderDetail.outOfPocket" class="text-gray-500">Out-of-pocket</p>
           <p class="font-bold text-brand-navy text-lg">{formatPrice(outOfPocket)}</p>
         </div>
       </div>
       {order.order_notes && (
         <div class="mt-4 pt-4 border-t border-gray-100">
-          <p class="text-sm text-gray-500">Notes</p>
+          <p data-i18n-key="orderDetail.notes" class="text-sm text-gray-500">Notes</p>
           <p class="text-sm text-brand-navy mt-1">{order.order_notes}</p>
         </div>
       )}
@@ -128,17 +132,17 @@ const outOfPocket = order.out_of_pocket || 0;
         <div class="mt-4 pt-4 border-t border-gray-100">
           <dl class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
             <div>
-              <dt class="text-xs text-gray-500 uppercase tracking-wider">Employee</dt>
+              <dt data-i18n-key="orderDetail.employee" class="text-xs text-gray-500 uppercase tracking-wider">Employee</dt>
               <dd class="font-medium text-brand-navy mt-0.5">
                 {employeeProfile.display_name || [employeeProfile.first_name, employeeProfile.last_name].filter(Boolean).join(' ') || '--'}
               </dd>
             </div>
             <div>
-              <dt class="text-xs text-gray-500 uppercase tracking-wider">Location</dt>
+              <dt data-i18n-key="orderDetail.location" class="text-xs text-gray-500 uppercase tracking-wider">Location</dt>
               <dd class="font-medium text-brand-navy mt-0.5">{employeeProfile.primary_location || '--'}</dd>
             </div>
             <div>
-              <dt class="text-xs text-gray-500 uppercase tracking-wider">Manager</dt>
+              <dt data-i18n-key="orderDetail.manager" class="text-xs text-gray-500 uppercase tracking-wider">Manager</dt>
               <dd class="font-medium text-brand-navy mt-0.5">{employeeProfile.manager_name || '--'}</dd>
             </div>
           </dl>
@@ -149,7 +153,9 @@ const outOfPocket = order.out_of_pocket || 0;
     <!-- Line Items -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-100">
-        <h2 class="font-semibold text-brand-navy">Items ({items.length})</h2>
+        <h2 class="font-semibold text-brand-navy">
+          <span data-i18n-key="orderDetail.itemsHeading">Items</span> ({items.length})
+        </h2>
       </div>
 
       <!-- Desktop Table -->
@@ -157,12 +163,12 @@ const outOfPocket = order.out_of_pocket || 0;
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b border-gray-100 text-left text-gray-500">
-              <th class="px-6 py-3 font-medium">Product</th>
-              <th class="px-6 py-3 font-medium">Size / Color</th>
-              <th class="px-6 py-3 font-medium text-center">Qty</th>
-              <th class="px-6 py-3 font-medium text-right">Price</th>
-              <th class="px-6 py-3 font-medium text-right">Total</th>
-              <th class="px-6 py-3 font-medium text-right">Status</th>
+              <th data-i18n-key="orderDetail.product" class="px-6 py-3 font-medium">Product</th>
+              <th data-i18n-key="orderDetail.sizeColor" class="px-6 py-3 font-medium">Size / Color</th>
+              <th data-i18n-key="orderDetail.qty" class="px-6 py-3 font-medium text-center">Qty</th>
+              <th data-i18n-key="orderDetail.price" class="px-6 py-3 font-medium text-right">Price</th>
+              <th data-i18n-key="orderDetail.total" class="px-6 py-3 font-medium text-right">Total</th>
+              <th data-i18n-key="orderDetail.status" class="px-6 py-3 font-medium text-right">Status</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50">
