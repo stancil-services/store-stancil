@@ -101,7 +101,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     // Calculate credit already used from existing orders
     const creditUsedResult = await db
-      .prepare("SELECT COALESCE(SUM(credit_used), 0) as total_credit_used FROM orders WHERE employee_email = ? AND status != 'Cancelled'")
+      .prepare("SELECT COALESCE(SUM(credit_used), 0) as total_credit_used FROM orders WHERE employee_email = ? AND status != 'Cancelled' AND created_at >= strftime('%Y-01-01', 'now')")
       .bind(sanitizedEmail)
       .first() as { total_credit_used: number } | null;
 

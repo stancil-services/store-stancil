@@ -22,7 +22,7 @@ try {
   recentOrders = ordersResult.results || [];
 
   creditResult = await db
-    .prepare("SELECT COALESCE(SUM(credit_used), 0) as total FROM orders WHERE employee_email = ? AND status != 'Cancelled'")
+    .prepare("SELECT COALESCE(SUM(credit_used), 0) as total FROM orders WHERE employee_email = ? AND status != 'Cancelled' AND created_at >= strftime('%Y-01-01', 'now')")
     .bind(userEmail)
     .first();
 } catch (err) {
