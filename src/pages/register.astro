@@ -118,12 +118,7 @@ try {
           </select>
         </div>
 
-        <div class="field">
-          <label for="manager">Manager</label>
-          <select id="manager" name="manager" disabled>
-            <option value="">— Select location first —</option>
-          </select>
-        </div>
+        <input type="hidden" name="manager" value="" />
 
         <button
           type="submit"
@@ -135,39 +130,5 @@ try {
     </div>
   </div>
 
-  <script>
-    const locationSelect = document.getElementById('location') as HTMLSelectElement;
-    const managerSelect = document.getElementById('manager') as HTMLSelectElement;
-
-    locationSelect?.addEventListener('change', async () => {
-      const location = locationSelect.value;
-      if (!location) {
-        managerSelect.innerHTML = '<option value="">— Select location first —</option>';
-        managerSelect.disabled = true;
-        return;
-      }
-
-      managerSelect.innerHTML = '<option value="">Loading...</option>';
-      managerSelect.disabled = true;
-
-      try {
-        const res = await fetch(`/api/managers?location=${encodeURIComponent(location)}`);
-        if (res.ok) {
-          const data = await res.json();
-          const managers = data.managers as { manager_name: string; manager_email: string }[];
-          if (managers.length === 0) {
-            managerSelect.innerHTML = '<option value="">— No managers found —</option>';
-          } else {
-            managerSelect.innerHTML = '<option value="">— Select manager —</option>' +
-              managers.map(m => `<option value="${m.manager_name}|${m.manager_email}">${m.manager_name}</option>`).join('');
-          }
-          managerSelect.disabled = false;
-        }
-      } catch {
-        managerSelect.innerHTML = '<option value="">— Error loading —</option>';
-        managerSelect.disabled = false;
-      }
-    });
-  </script>
 </body>
 </html>

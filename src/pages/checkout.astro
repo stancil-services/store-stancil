@@ -85,7 +85,7 @@ import StoreLayout from '../layouts/StoreLayout.astro';
                 class="w-full sm:w-72 px-3 py-2 border border-gray-200 rounded-lg text-sm text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-blue disabled:opacity-50"
                 disabled
               >
-                <option value="">— Select location first —</option>
+                <option value="">— Loading manager —</option>
               </select>
             </div>
           </div>
@@ -187,10 +187,7 @@ import StoreLayout from '../layouts/StoreLayout.astro';
   let creditUsed = 0;
   let lang: 'en' | 'es' = (localStorage.getItem(LANG_KEY) as 'en' | 'es') || 'en';
 
-  // Location / manager state
   let profileLocation = '';
-  let profileManagerName = '';
-  let profileManagerEmail = '';
 
   const i18n = {
     en: {
@@ -303,8 +300,6 @@ import StoreLayout from '../layouts/StoreLayout.astro';
           creditTotal = data.profile.yearly_credit || 200;
           creditUsed = data.profile.credit_used || 0;
           profileLocation = data.profile.primary_location || '';
-          profileManagerName = data.profile.manager_name || '';
-          profileManagerEmail = data.profile.manager_email || '';
         }
       }
     } catch {
@@ -326,48 +321,35 @@ import StoreLayout from '../layouts/StoreLayout.astro';
             `<option value="${name}"${name === profileLocation ? ' selected' : ''}>${name}</option>`
           ).join('');
 
-        if (profileLocation) {
-          await loadManagers(profileLocation);
-        }
       }
     } catch {
       // leave default option
     }
   }
 
-  async function loadManagers(location: string) {
+  async function loadManagers() {
     const managerSelect = document.getElementById('co-manager') as HTMLSelectElement | null;
     if (!managerSelect) return;
-
-    if (!location) {
-      managerSelect.innerHTML = '<option value="">— Select location first —</option>';
-      managerSelect.disabled = true;
-      return;
-    }
 
     managerSelect.disabled = true;
     managerSelect.innerHTML = '<option value="">Loading...</option>';
 
     try {
-      const res = await fetch(`/api/managers?location=${encodeURIComponent(location)}`);
+      const res = await fetch('/api/managers');
       if (res.ok) {
         const data = await res.json();
-        const managers = data.managers as { manager_name: string; manager_email: string }[];
+        const m = data.manager as { manager_name: string; manager_email: string } | null;
 
-        if (managers.length === 0) {
-          managerSelect.innerHTML = '<option value="">— No managers found —</option>';
+        if (!m) {
+          managerSelect.innerHTML = '<option value="">— No manager on file —</option>';
         } else {
-          managerSelect.innerHTML = '<option value="">— Select manager —</option>' +
-            managers.map(m => {
-              const val = `${m.manager_name}|${m.manager_email}`;
-              const isDefault = m.manager_email === profileManagerEmail;
-              return `<option value="${val}"${isDefault ? ' selected' : ''}>${m.manager_name}</option>`;
-            }).join('');
+          const val = `${m.manager_name}|${m.manager_email}`;
+          managerSelect.innerHTML = `<option value="${val}" selected>${m.manager_name}</option>`;
         }
         managerSelect.disabled = false;
       }
     } catch {
-      managerSelect.innerHTML = '<option value="">— Error loading managers —</option>';
+      managerSelect.innerHTML = '<option value="">— Error loading manager —</option>';
       managerSelect.disabled = false;
     }
   }
@@ -499,14 +481,9 @@ import StoreLayout from '../layouts/StoreLayout.astro';
   // ---- Wire up event listeners ----
 
   renderCheckout();
-  // fetchCredit populates profileLocation/Manager, then loadLocations uses them
   fetchCredit().then(() => loadLocations());
+  loadManagers();
   updateLangButtons();
-
-  document.getElementById('co-location')?.addEventListener('change', (e) => {
-    const loc = (e.target as HTMLSelectElement).value;
-    loadManagers(loc);
-  });
 
   document.getElementById('place-order-btn')?.addEventListener('click', placeOrder);
 
