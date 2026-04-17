@@ -12,14 +12,11 @@ export const GET: APIRoute = async ({ url, locals }) => {
 
   try {
     const db = locals.runtime.env.STORE_DB;
-    // Return distinct manager name+email pairs from profiles at this location
     const result = await db
       .prepare(
-        `SELECT DISTINCT manager_name, manager_email
-         FROM profiles
-         WHERE primary_location = ?
-           AND manager_email IS NOT NULL
-           AND manager_email != ''
+        `SELECT manager_name, manager_email
+         FROM managers
+         WHERE location = ?
          ORDER BY manager_name`
       )
       .bind(location)
