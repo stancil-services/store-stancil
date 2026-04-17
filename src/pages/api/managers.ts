@@ -1,36 +1,31 @@
 import type { APIRoute } from 'astro';
 
-export const GET: APIRoute = async ({ url, locals }) => {
-  const location = url.searchParams.get('location') || '';
-
-  if (!location) {
-    return new Response(
-      JSON.stringify({ managers: [] }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-
+export const GET: APIRoute = async ({ locals }) => {
   try {
     const db = locals.runtime.env.STORE_DB;
-    const result = await db
-      .prepare(
-        `SELECT manager_name, manager_email
-         FROM managers
-         WHERE location = ?
-         ORDER BY manager_name`
-      )
-      .bind(location)
-      .all() as { results: { manager_name: string; manager_email: string }[] };
+    const email = (locals as any).userEmail?.toLowerCase().trim();
 
-    return new Response(
-      JSON.stringify({ managers: result.results }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    if (!email) {
+      return new Response(JSON.stringify({ manager: null }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const row = await db
+      .prepare('SELECT manager_name, manager_email FROM managers WHERE employee_email = ?')
+      .bind(email)
+      .first() as { manager_name: string; manager_email: string } | null;
+
+    return new Response(JSON.stringify({ manager: row ?? null }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (err) {
     console.error('GET /api/managers error:', err);
-    return new Response(
-      JSON.stringify({ managers: [] }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ manager: null }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 };
