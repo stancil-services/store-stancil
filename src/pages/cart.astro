@@ -71,7 +71,7 @@ import StoreLayout from '../layouts/StoreLayout.astro';
 <script>
   const CART_KEY = 'stancil-cart';
 
-  let creditTotal = 200;
+  let creditTotal = 0;
   let creditUsed = 0;
 
   function getCart(): any[] {
@@ -216,8 +216,8 @@ import StoreLayout from '../layouts/StoreLayout.astro';
       if (res.ok) {
         const data = await res.json();
         if (data.profile) {
-          creditTotal = data.profile.yearly_credit || 200;
-          creditUsed = data.profile.credit_used || 0;
+          creditTotal = data.profile.yearly_credit ?? 0;
+          creditUsed = data.profile.credit_used ?? 0;
         }
       }
     } catch {
