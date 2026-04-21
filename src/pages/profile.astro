@@ -29,10 +29,10 @@ try {
   console.error('Error fetching profile:', err);
 }
 
-const yearlyCredit = profile?.yearly_credit || 200;
+const yearlyCredit = profile?.yearly_credit ?? 0;
 const creditUsed = (creditResult as any)?.total ?? 0;
-const creditRemaining = yearlyCredit - creditUsed;
-const creditPercent = Math.round((creditUsed / yearlyCredit) * 100);
+const creditRemaining = Math.max(0, yearlyCredit - creditUsed);
+const creditPercent = yearlyCredit > 0 ? Math.min(100, Math.round((creditUsed / yearlyCredit) * 100)) : 0;
 const circumference = 2 * Math.PI * 54; // r=54
 const strokeDashoffset = circumference - (creditPercent / 100) * circumference;
 
@@ -190,7 +190,7 @@ const statusStyles: Record<string, string> = {
 
     function updateCreditLine(lang: Language) {
       if (!creditLineEl) return;
-      const amount = creditLineEl.dataset.amount || '200';
+      const amount = creditLineEl.dataset.amount || '0';
       creditLineEl.textContent = lang === 'es'
         ? `$${amount} de crédito anual`
         : `of $${amount} yearly credit`;
