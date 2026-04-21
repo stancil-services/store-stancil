@@ -40,7 +40,7 @@ const categories = categoryRows.map((r: any) => r.category as string);
         </div>
         <div class="hero-line sm:text-right shrink-0" style="animation-delay:0.25s">
           <p data-i18n-key="shop.yearlyCredit" class="text-near-black/40 text-xs uppercase tracking-wide font-medium">Yearly Credit</p>
-          <p id="header-credit-display" class="font-display text-3xl font-bold text-brand-blue leading-tight">$200</p>
+          <p id="header-credit-display" class="font-display text-3xl font-bold text-brand-blue leading-tight">$0</p>
         </div>
       </div>
       <p data-i18n-key="shop.description" class="hero-line mt-4 text-near-black/55 max-w-xl" style="animation-delay:0.4s">
@@ -214,7 +214,9 @@ const categories = categoryRows.map((r: any) => r.category as string);
         if (res.ok) {
           const data = await res.json();
           if (data.profile) {
-            const remaining = (data.profile.yearly_credit || 200) - (data.profile.credit_used || 0);
+            const yearly = data.profile.yearly_credit ?? 0;
+            const used = data.profile.credit_used ?? 0;
+            const remaining = Math.max(0, yearly - used);
             const el = document.getElementById('header-credit-display');
             if (el) el.textContent = '$' + remaining.toFixed(0);
           }
