@@ -1,3 +1,4 @@
+<!-- store-stancil -->
 # Astro Starter Kit: Minimal
 
 ```sh
