@@ -28,7 +28,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (token && env?.SESSION_SECRET) {
     const payload = await verifySessionToken(token, env.SESSION_SECRET);
     if (payload && !payload.reg) {
-      context.locals.userEmail = payload.sub;
+      context.locals.userEmail = (payload.sub || '').toLowerCase().trim();
     }
   }
 

@@ -51,17 +51,21 @@ export const GET: APIRoute = async ({ url, locals }) => {
       return Response.redirect(`${url.origin}/login?error=no_email`, 302);
     }
 
-    // Ensure profile exists
+    // Ensure profile exists. Match case-insensitively because legacy rows
+    // synced from Graph may have a mixed-case email; the unique index on
+    // LOWER(email) means at most one row can match.
     const db = env.STORE_DB;
-    const existing = await db.prepare('SELECT id FROM profiles WHERE email = ?').bind(email).first();
+    const existing = await db.prepare('SELECT id FROM profiles WHERE LOWER(email) = ?').bind(email).first();
     if (!existing) {
-      // Auto-create profile for Microsoft (corporate) users
+      // Auto-create profile for Microsoft (corporate) users. Use the Azure
+      // AD object id (oid) for `profiles.id` so it matches the format used
+      // by the Graph manager sync.
       const displayName = payload.name || [payload.given_name, payload.family_name].filter(Boolean).join(' ') || email;
       await db.prepare(
         `INSERT INTO profiles (id, email, display_name, first_name, last_name, role, yearly_credit)
          VALUES (?, ?, ?, ?, ?, 'employee', 200)`
       ).bind(
-        crypto.randomUUID(),
+        payload.oid || payload.sub || crypto.randomUUID(),
         email,
         displayName,
         payload.given_name || null,
