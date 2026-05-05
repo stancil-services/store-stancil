@@ -11,7 +11,7 @@ const decoded = tokenParam ? await verifySessionToken(tokenParam, env.SESSION_SE
 if (!decoded || !decoded.reg) {
   return Astro.redirect('/login');
 }
-const email = decoded.sub;
+const email = (decoded.sub || '').toLowerCase().trim();
 
 // Handle form submission
 let formError = '';
@@ -27,7 +27,7 @@ if (Astro.request.method === 'POST') {
     formError = 'First and last name are required.';
   } else {
     await db.prepare(
-      `INSERT INTO profiles (id, email, display_name, first_name, last_name, primary_location, manager_name, manager_email, role, yearly_credit)
+      `INSERT OR IGNORE INTO profiles (id, email, display_name, first_name, last_name, primary_location, manager_name, manager_email, role, yearly_credit)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'employee', 200)`
     ).bind(
       crypto.randomUUID(),
