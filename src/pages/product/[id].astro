@@ -351,23 +351,18 @@ const hasCreditEligible = variants.some((v: any) => v.is_credit_allowed === 1);
         }
       }
 
-      // Update Add to Cart button
+      // Update Add to Cart button — always enabled; backorders are allowed
       if (addToCartBtn) {
-        if (stock === 0) {
-          addToCartBtn.disabled = true;
-          addToCartBtn.textContent = 'Out of Stock';
-        } else {
-          addToCartBtn.disabled = false;
-          addToCartBtn.textContent = 'Add to Cart';
-        }
+        addToCartBtn.disabled = false;
+        addToCartBtn.textContent = stock <= 0 ? 'Add to Cart (Backorder)' : 'Add to Cart';
       }
 
-      // Cap quantity at stock
+      // Quantity cap: use stock when in stock, otherwise allow up to 10 for backorders
       if (qtyInput) {
-        const maxQty = Math.min(stock, 10);
+        const maxQty = stock > 0 ? Math.min(stock, 10) : 10;
         qtyInput.max = String(maxQty);
         if (parseInt(qtyInput.value) > maxQty) {
-          qtyInput.value = String(Math.max(maxQty, 1));
+          qtyInput.value = String(maxQty);
         }
       }
     }
@@ -406,7 +401,7 @@ const hasCreditEligible = variants.some((v: any) => v.is_credit_allowed === 1);
 
     // Add to Cart
     addToCartBtn?.addEventListener('click', () => {
-      if (!selectedVariant || selectedVariant.stock_quantity === 0) return;
+      if (!selectedVariant) return;
 
       const qty = parseInt(qtyInput?.value || '1');
       const cartItem = {
