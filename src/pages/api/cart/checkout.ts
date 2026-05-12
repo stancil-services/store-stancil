@@ -154,36 +154,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    // 2. Atomic stock decrement — check stock_quantity >= requested in WHERE clause
+    // 2. Decrement stock — negative values track backorder depth
     for (let i = 0; i < validatedItems.length; i++) {
       const item = validatedItems[i];
-      const variant = variantRows[i];
 
-      const stockResult = await db
-        .prepare(
-          'UPDATE product_variants SET stock_quantity = stock_quantity - ? WHERE id = ? AND stock_quantity >= ?'
-        )
-        .bind(item.quantity, item.variantId, item.quantity)
+      await db
+        .prepare('UPDATE product_variants SET stock_quantity = stock_quantity - ? WHERE id = ?')
+        .bind(item.quantity, item.variantId)
         .run();
-
-      if (!stockResult.meta?.changes) {
-        // Insufficient stock — roll back the order
-        await db.batch([
-          db.prepare('DELETE FROM order_items WHERE order_id = ?').bind(orderId),
-          db.prepare('DELETE FROM orders WHERE id = ?').bind(orderId),
-          // Restore stock for any variants already decremented
-          ...validatedItems.slice(0, i).map((prev) =>
-            db
-              .prepare('UPDATE product_variants SET stock_quantity = stock_quantity + ? WHERE id = ?')
-              .bind(prev.quantity, prev.variantId)
-          ),
-        ]);
-
-        return new Response(
-          JSON.stringify({ success: false, error: `Insufficient stock for ${variant.product_name}` }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
     }
 
     // 3. Insert order items
