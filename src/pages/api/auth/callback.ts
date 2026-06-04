@@ -61,9 +61,11 @@ export const GET: APIRoute = async ({ url, locals }) => {
       // AD object id (oid) for `profiles.id` so it matches the format used
       // by the Graph manager sync.
       const displayName = payload.name || [payload.given_name, payload.family_name].filter(Boolean).join(' ') || email;
+      // New profiles start at $0 credit; the 90-day cron grants $200 once the
+      // employee is credit-eligible and their hire_date clears probation.
       await db.prepare(
         `INSERT INTO profiles (id, email, display_name, first_name, last_name, role, yearly_credit)
-         VALUES (?, ?, ?, ?, ?, 'employee', 200)`
+         VALUES (?, ?, ?, ?, ?, 'employee', 0)`
       ).bind(
         payload.oid || payload.sub || crypto.randomUUID(),
         email,

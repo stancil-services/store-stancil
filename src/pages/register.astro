@@ -26,9 +26,11 @@ if (Astro.request.method === 'POST') {
   if (!firstName || !lastName) {
     formError = 'First and last name are required.';
   } else {
+    // New profiles start at $0 credit; the 90-day cron grants $200 once the
+    // employee is credit-eligible and their hire_date clears probation.
     await db.prepare(
       `INSERT OR IGNORE INTO profiles (id, email, display_name, first_name, last_name, primary_location, manager_name, manager_email, role, yearly_credit)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'employee', 200)`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'employee', 0)`
     ).bind(
       crypto.randomUUID(),
       email,
