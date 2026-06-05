@@ -43,5 +43,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return context.redirect(redirectTo);
   }
 
+  // Block archived (terminated) accounts from accessing the store.
+  try {
+    const db = env?.STORE_DB;
+    if (db) {
+      const acct = await db
+        .prepare('SELECT archived FROM profiles WHERE LOWER(email) = ?')
+        .bind(context.locals.userEmail)
+        .first();
+      if (acct && acct.archived) {
+        return context.redirect('/login?error=inactive');
+      }
+    }
+  } catch { /* archived column may be absent in some envs; fail open */ }
+
   return next();
 });
