@@ -221,7 +221,7 @@ const categories = categoryRows.map((r: any) => r.category as string);
             if (el) el.textContent = '$' + remaining.toFixed(0);
           }
         }
-      } catch { /* use default $200 */ }
+      } catch { /* on error, leave the server-rendered credit value as-is */ }
     })();
 
     const grid = document.getElementById('product-grid');
