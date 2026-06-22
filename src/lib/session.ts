@@ -39,16 +39,6 @@ export async function createSessionToken(email: string, secret: string): Promise
   return `${data}.${base64urlEncode(sig)}`;
 }
 
-export async function createRegistrationToken(email: string, secret: string): Promise<string> {
-  const header = base64urlEncode(strToBytes(JSON.stringify({ alg: 'HS256', typ: 'JWT' })));
-  const now = Math.floor(Date.now() / 1000);
-  const payload = base64urlEncode(strToBytes(JSON.stringify({ sub: email, reg: true, iat: now, exp: now + 900 })));
-  const data = `${header}.${payload}`;
-  const key = await getKey(secret);
-  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, strToBytes(data)));
-  return `${data}.${base64urlEncode(sig)}`;
-}
-
 export async function verifySessionToken(token: string, secret: string): Promise<{ sub: string; reg?: boolean } | null> {
   try {
     const parts = token.split('.');

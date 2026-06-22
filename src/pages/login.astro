@@ -101,6 +101,44 @@ const error = Astro.url.searchParams.get('error') || '';
           </button>
         </div>
 
+        <!-- Step 3: Request access (no account yet — guest) -->
+        <div id="step-request" style="display: none;">
+          <p style="margin: 0 0 16px; font-size: 14px; color: #374151;">
+            We couldn't find a store account for <strong id="request-email"></strong>. Request access and HR will set you up.
+          </p>
+          <label for="req-first" style="display: block; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 6px;">First Name</label>
+          <input
+            id="req-first"
+            type="text"
+            style="width: 100%; padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; color: #111827; outline: none; box-sizing: border-box;"
+          />
+          <label for="req-last" style="display: block; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin: 14px 0 6px;">Last Name</label>
+          <input
+            id="req-last"
+            type="text"
+            style="width: 100%; padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; color: #111827; outline: none; box-sizing: border-box;"
+          />
+          <button
+            id="request-btn"
+            style="width: 100%; margin-top: 16px; padding: 14px 20px; background: #2563eb; color: #fff; font-size: 15px; font-weight: 600; border-radius: 8px; border: none; cursor: pointer;"
+          >
+            Request Access
+          </button>
+          <button
+            id="request-back-btn"
+            style="width: 100%; margin-top: 8px; padding: 10px; background: none; border: none; color: #6b7280; font-size: 13px; cursor: pointer;"
+          >
+            Use a different email
+          </button>
+        </div>
+
+        <!-- Step 4: Request submitted -->
+        <div id="step-request-done" style="display: none;">
+          <div style="padding: 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; font-size: 14px; color: #166534;">
+            Thanks! Your request has been sent to HR. They'll create your account and email you when it's ready.
+          </div>
+        </div>
+
         <!-- Error -->
         <p id="otp-error" style="display: none; margin: 12px 0 0; font-size: 14px; color: #dc2626;"></p>
       </div>
@@ -117,6 +155,13 @@ const error = Astro.url.searchParams.get('error') || '';
     const verifyBtn = document.getElementById('verify-btn');
     const backBtn = document.getElementById('back-btn');
     const errorEl = document.getElementById('otp-error');
+    const stepRequest = document.getElementById('step-request');
+    const stepRequestDone = document.getElementById('step-request-done');
+    const requestEmailEl = document.getElementById('request-email');
+    const reqFirst = document.getElementById('req-first');
+    const reqLast = document.getElementById('req-last');
+    const requestBtn = document.getElementById('request-btn');
+    const requestBackBtn = document.getElementById('request-back-btn');
 
     let currentEmail = '';
 
@@ -147,6 +192,16 @@ const error = Astro.url.searchParams.get('error') || '';
         if (!res.ok) { showError(data.error || 'Failed to send code.'); return; }
 
         currentEmail = email;
+
+        // No account for this email — guests can't self-register; route to the request form.
+        if (data.needsRequest) {
+          stepEmail.style.display = 'none';
+          if (requestEmailEl) requestEmailEl.textContent = email;
+          if (stepRequest) stepRequest.style.display = 'block';
+          reqFirst?.focus();
+          return;
+        }
+
         stepEmail.style.display = 'none';
         stepCode.style.display = 'block';
         sentEmailEl.textContent = email;
@@ -190,6 +245,48 @@ const error = Astro.url.searchParams.get('error') || '';
       stepCode.style.display = 'none';
       stepEmail.style.display = 'block';
       codeInput.value = '';
+    });
+
+    requestBtn?.addEventListener('click', async () => {
+      clearError();
+      const first = reqFirst?.value?.trim();
+      const last = reqLast?.value?.trim();
+      if (!first || !last) { showError('Please enter your first and last name.'); return; }
+
+      requestBtn.disabled = true;
+      requestBtn.textContent = 'Sending...';
+
+      try {
+        const res = await fetch('/api/auth/request-access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ first_name: first, last_name: last, email: currentEmail }),
+        });
+        const data = await res.json();
+        if (!res.ok) { showError(data.error || 'Could not send your request.'); return; }
+
+        // Already had an account — send them back to sign in instead.
+        if (data.alreadyExists) {
+          stepRequest.style.display = 'none';
+          stepEmail.style.display = 'block';
+          showError('You already have an account — enter your email to get a login code.');
+          return;
+        }
+
+        stepRequest.style.display = 'none';
+        stepRequestDone.style.display = 'block';
+      } catch {
+        showError('Network error. Please try again.');
+      } finally {
+        requestBtn.disabled = false;
+        requestBtn.textContent = 'Request Access';
+      }
+    });
+
+    requestBackBtn?.addEventListener('click', () => {
+      clearError();
+      stepRequest.style.display = 'none';
+      stepEmail.style.display = 'block';
     });
 
     // Allow Enter key
