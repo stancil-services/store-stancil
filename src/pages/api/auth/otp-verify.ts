@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { createSessionToken, createRegistrationToken, setSessionCookieHeader } from '../../../lib/session';
+import { createSessionToken, setSessionCookieHeader } from '../../../lib/session';
 
 export const POST: APIRoute = async ({ request, url, locals }) => {
   const env = locals.runtime.env as any;
@@ -39,12 +39,12 @@ export const POST: APIRoute = async ({ request, url, locals }) => {
     return new Response(JSON.stringify({ success: true, redirect: redirect || '/' }), { headers });
   }
 
-  // New user — issue registration token
-  const regToken = await createRegistrationToken(normalizedEmail, env.SESSION_SECRET);
-  const regRedirect = `/register?token=${encodeURIComponent(regToken)}${redirect ? `&redirect=${encodeURIComponent(redirect)}` : ''}`;
-
+  // Guest self-registration is disabled — accounts are created by an admin only.
+  // An OTP for an email with no profile must never mint an account; route them to
+  // the request-access flow instead. (otp-send already blocks unknown emails; this
+  // is defense-in-depth for any stale code.)
   return new Response(
-    JSON.stringify({ success: true, needsRegistration: true, redirect: regRedirect }),
-    { headers: { 'Content-Type': 'application/json' } },
+    JSON.stringify({ error: 'No store account found for this email. Please request access.' }),
+    { status: 403, headers: { 'Content-Type': 'application/json' } },
   );
 };

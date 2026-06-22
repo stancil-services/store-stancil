@@ -15,6 +15,16 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   const normalizedEmail = email.toLowerCase().trim();
 
+  // Guest self-registration is disabled — accounts are created by an admin only.
+  // An email with no profile gets NO login code (so we never email arbitrary
+  // addresses); the login UI routes them to the "request access" form instead.
+  const profile = await db.prepare('SELECT id FROM profiles WHERE LOWER(email) = ?').bind(normalizedEmail).first();
+  if (!profile) {
+    return new Response(JSON.stringify({ needsRequest: true }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   // Rate limit: max 5 codes in 15 minutes
   const recent = await db.prepare(
     `SELECT COUNT(*) as cnt FROM otp_codes
