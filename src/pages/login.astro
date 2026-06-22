@@ -29,6 +29,7 @@ const error = Astro.url.searchParams.get('error') || '';
         <div style="margin-bottom: 20px; padding: 12px 16px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; font-size: 14px; color: #991b1b;">
           {error === 'auth_failed' ? 'Microsoft sign-in failed. Please try again.' :
            error === 'no_email' ? 'Could not retrieve email from Microsoft account.' :
+           error === 'inactive' ? 'This account is no longer active. Please contact HR.' :
            'Something went wrong. Please try again.'}
         </div>
       )}
