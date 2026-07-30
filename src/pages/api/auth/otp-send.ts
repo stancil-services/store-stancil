@@ -18,9 +18,25 @@ export const POST: APIRoute = async ({ request, locals }) => {
   // Guest self-registration is disabled — accounts are created by an admin only.
   // An email with no profile gets NO login code (so we never email arbitrary
   // addresses); the login UI routes them to the "request access" form instead.
-  const profile = await db.prepare('SELECT id FROM profiles WHERE LOWER(email) = ?').bind(normalizedEmail).first();
+  // Employees must sign in with Microsoft SSO (MFA); the code path is only for
+  // HR-created guest accounts on personal emails.
+  if (normalizedEmail.endsWith('@stancilservices.com')) {
+    return new Response(JSON.stringify({ error: 'Stancil employees sign in with Microsoft.' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const profile = await db.prepare('SELECT id, archived FROM profiles WHERE LOWER(email) = ?').bind(normalizedEmail).first() as { id: string; archived: number } | null;
   if (!profile) {
     return new Response(JSON.stringify({ needsRequest: true }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  // Archived (deactivated) accounts get no codes — mirrors the SSO callback block.
+  if (profile.archived) {
+    return new Response(JSON.stringify({ error: 'This account has been deactivated. Contact HR if you believe this is an error.' }), {
+      status: 403,
       headers: { 'Content-Type': 'application/json' },
     });
   }

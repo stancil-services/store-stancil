@@ -25,8 +25,15 @@ export const POST: APIRoute = async ({ request, url, locals }) => {
   // Mark as used
   await db.prepare('UPDATE otp_codes SET used = 1 WHERE id = ?').bind(match.id).run();
 
-  // Check if profile exists
-  const profile = await db.prepare('SELECT id FROM profiles WHERE email = ?').bind(normalizedEmail).first();
+  // Check if profile exists (case-insensitive, matching otp-send) and is active
+  const profile = await db.prepare('SELECT id, archived FROM profiles WHERE LOWER(email) = ?').bind(normalizedEmail).first() as { id: string; archived: number } | null;
+
+  if (profile && profile.archived) {
+    return new Response(JSON.stringify({ error: 'This account has been deactivated. Contact HR if you believe this is an error.' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   if (profile) {
     // Existing user — create session
