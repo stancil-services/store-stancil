@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { resolveOrderManager } from '../../lib/order-manager';
 
 export const GET: APIRoute = async ({ locals }) => {
   try {
@@ -12,12 +13,11 @@ export const GET: APIRoute = async ({ locals }) => {
       });
     }
 
-    const row = await db
-      .prepare('SELECT manager_name, manager_email FROM managers WHERE employee_email = ?')
-      .bind(email)
-      .first() as { manager_name: string; manager_email: string } | null;
+    // Same lookup checkout uses, so the page shows the manager the order will get.
+    const m = await resolveOrderManager(db, email);
+    const manager = m ? { manager_name: m.name ?? m.email, manager_email: m.email } : null;
 
-    return new Response(JSON.stringify({ manager: row ?? null }), {
+    return new Response(JSON.stringify({ manager }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
