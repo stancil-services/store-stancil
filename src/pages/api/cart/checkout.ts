@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { sendEmail, type GraphEnv } from '../../../lib/email';
 import { orderConfirmationEmail, STORE_ADMIN_EMAIL } from '../../../lib/email-templates';
+import { resolveOrderManager } from '../../../lib/order-manager';
 
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
@@ -8,13 +9,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const body = await request.json();
 
     /* ---- Input validation ------------------------------------ */
-    const { items, location, managerName, managerEmail } = body;
+    // managerName/managerEmail from the browser are ignored: the manager is resolved
+    // server-side below so personal-email accounts fall back to their profile manager.
+    const { items, location } = body;
     const sanitizedEmail = locals.userEmail.toLowerCase().trim();
 
     // Sanitize optional string fields
     const sanitizedLocation = typeof location === 'string' ? location.slice(0, 100) : null;
-    const sanitizedManagerName = typeof managerName === 'string' ? managerName.slice(0, 200) : null;
-    const sanitizedManagerEmail = typeof managerEmail === 'string' ? managerEmail.toLowerCase().trim().slice(0, 254) : null;
 
     if (!Array.isArray(items) || items.length === 0) {
       return new Response(JSON.stringify({ success: false, error: 'Cart is empty' }), {
@@ -98,6 +99,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
       .first() as { id: string; yearly_credit: number | null; email: string } | null;
 
     const sanitizedUserId = profile?.id ? String(profile.id) : null;
+
+    const manager = await resolveOrderManager(db, sanitizedEmail);
+    const sanitizedManagerName = manager?.name ?? null;
+    const sanitizedManagerEmail = manager?.email ?? null;
 
     // Calculate credit already used from existing orders
     const creditUsedResult = await db
